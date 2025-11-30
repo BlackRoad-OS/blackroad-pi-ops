@@ -201,12 +201,18 @@ class PiAgent:
             try:
                 if self.connection.is_connected:
                     metrics = self.telemetry.collect_metrics()
+                    # Format matches operator's AgentHeartbeat schema
                     await self.connection.send("heartbeat", {
                         "agent_id": self.config.agent.agent_id,
-                        "hostname": self.config.agent.hostname,
-                        "metrics": metrics.to_dict(),
-                        "running_tasks": self.executor.get_running_tasks(),
-                        "scheduled_tasks": len(self.scheduler.get_scheduled_tasks()),
+                        "telemetry": {
+                            "cpu_percent": metrics.cpu_percent,
+                            "memory_percent": metrics.memory_percent,
+                            "disk_percent": metrics.disk_percent,
+                            "uptime_seconds": metrics.uptime_seconds,
+                            "load_average": list(metrics.load_average),
+                        },
+                        "current_task_id": self.executor.get_running_tasks()[0] if self.executor.get_running_tasks() else None,
+                        "workspaces": [],
                     })
                     logger.debug("Sent heartbeat")
             except Exception:

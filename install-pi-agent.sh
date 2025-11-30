@@ -117,10 +117,10 @@ setup_directories() {
     mkdir -p "$CONFIG_DIR"
     mkdir -p "$LOG_DIR"
 
-    # Set permissions
+    # Set permissions - CONFIG_DIR needs 755 so pi user can read config
     chown -R pi:pi "$INSTALL_DIR" 2>/dev/null || true
     chown -R pi:pi "$LOG_DIR" 2>/dev/null || true
-    chmod 750 "$CONFIG_DIR"
+    chmod 755 "$CONFIG_DIR"
 
     log_success "Directories created"
 }
