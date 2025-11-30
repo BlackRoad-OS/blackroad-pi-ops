@@ -236,7 +236,8 @@ generate_config() {
 }
 EOF
 
-    chmod 640 "$CONFIG_FILE"
+    chmod 644 "$CONFIG_FILE"
+    chown root:pi "$CONFIG_FILE"
     log_success "Configuration generated: $CONFIG_FILE"
     log_info "Agent ID: $AGENT_ID"
 }
