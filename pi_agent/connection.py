@@ -65,6 +65,8 @@ class ConnectionManager:
         agent_id: str,
         agent_type: str,
         capabilities: List[str],
+        hostname: str = "",
+        tags: Optional[Dict[str, str]] = None,
     ) -> None:
         if not WEBSOCKETS_AVAILABLE:
             raise ImportError("websockets library required: pip install websockets")
@@ -73,6 +75,8 @@ class ConnectionManager:
         self.agent_id = agent_id
         self.agent_type = agent_type
         self.capabilities = capabilities
+        self.hostname = hostname or agent_id
+        self.tags = tags or {}
 
         self._ws: Optional[WebSocketClientProtocol] = None
         self._state = ConnectionState.DISCONNECTED
@@ -172,12 +176,33 @@ class ConnectionManager:
             self._state = ConnectionState.DISCONNECTED
 
     async def _send_registration(self) -> None:
-        """Send agent registration message."""
+        """Send agent registration message.
+
+        Format matches blackroad-os-operator AgentRegistration schema:
+        - id: agent identifier
+        - hostname: device hostname
+        - display_name: human-readable name
+        - roles: list of roles (e.g., ["pi-node", "edge"])
+        - tags: list of tags
+        - capabilities: AgentCapabilities object
+        """
+        # Convert capability list to operator's capability format
+        capabilities_obj = {
+            "docker": "docker" in self.capabilities,
+            "python": "3.11" if "python" in self.capabilities else None,
+            "node": None,
+            "git": True,
+            "disk_gb": None,
+            "memory_mb": None,
+        }
+
         await self.send("register", {
-            "agent_id": self.agent_id,
-            "agent_type": self.agent_type,
-            "capabilities": self.capabilities,
-            "version": "0.1.0",
+            "id": self.agent_id,
+            "hostname": self.hostname,
+            "display_name": self.hostname,
+            "roles": [self.agent_type],
+            "tags": list(self.tags.keys()) if self.tags else [],
+            "capabilities": capabilities_obj,
         })
 
     async def _receive_loop(self) -> None:

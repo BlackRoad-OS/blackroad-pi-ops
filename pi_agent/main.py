@@ -41,6 +41,8 @@ class PiAgent:
             agent_id=config.agent.agent_id,
             agent_type=config.agent.agent_type,
             capabilities=config.agent.capabilities,
+            hostname=config.agent.hostname,
+            tags=config.agent.tags,
         )
 
         # Register handlers
@@ -50,9 +52,11 @@ class PiAgent:
         """Set up message and task handlers."""
         # WebSocket message handlers
         self.connection.on("task", self._handle_task)
+        self.connection.on("execute_task", self._handle_execute_task)  # Operator format
         self.connection.on("cancel", self._handle_cancel)
         self.connection.on("ping", self._handle_ping)
         self.connection.on("config", self._handle_config)
+        self.connection.on("registered", self._handle_registered)
 
         # Scheduler callback
         self.scheduler.add_callback(self._on_scheduled_task)
@@ -94,6 +98,92 @@ class PiAgent:
         """Handle config update from operator."""
         logger.info("Received config update: %s", msg.payload)
         # TODO: Apply config updates
+
+    async def _handle_registered(self, msg: Message) -> None:
+        """Handle registration confirmation from operator."""
+        logger.info("Registered with operator: %s", msg.payload.get("message", "OK"))
+
+    async def _handle_execute_task(self, msg: Message) -> None:
+        """Handle execute_task from operator (plan-based execution).
+
+        Operator sends:
+        {
+            "type": "execute_task",
+            "payload": {
+                "task_id": "...",
+                "plan": {"commands": [{"run": "..."}]}
+            }
+        }
+        """
+        task_id = msg.payload.get("task_id")
+        plan = msg.payload.get("plan", {})
+        commands = plan.get("commands", [])
+
+        logger.info("Received execute_task %s with %d commands", task_id, len(commands))
+
+        # Execute commands sequentially
+        for idx, cmd in enumerate(commands):
+            command = cmd.get("run", "")
+            if not command:
+                continue
+
+            # Create shell task
+            task = Task(
+                task_id=f"{task_id}-cmd-{idx}",
+                task_type="shell",
+                payload={"command": command},
+            )
+
+            await self.executor.submit(task)
+
+            # Wait for completion and send output
+            while True:
+                await asyncio.sleep(0.2)
+                result = self.executor.get_result(task.task_id)
+                if result and result.status.value not in ("pending", "running"):
+                    # Send command result
+                    await self.connection.send("command_result", {
+                        "task_id": task_id,
+                        "command_index": idx,
+                        "command": command,
+                        "exit_code": result.exit_code or 0,
+                        "duration_ms": int((result.duration or 0) * 1000),
+                    })
+
+                    # Send output
+                    if result.stdout:
+                        await self.connection.send("task_output", {
+                            "task_id": task_id,
+                            "command_index": idx,
+                            "stream": "stdout",
+                            "content": result.stdout,
+                        })
+                    if result.stderr:
+                        await self.connection.send("task_output", {
+                            "task_id": task_id,
+                            "command_index": idx,
+                            "stream": "stderr",
+                            "content": result.stderr,
+                        })
+
+                    # If command failed, stop execution
+                    if result.exit_code != 0:
+                        await self.connection.send("task_complete", {
+                            "task_id": task_id,
+                            "success": False,
+                            "exit_code": result.exit_code,
+                            "error": result.error or result.stderr,
+                        })
+                        return
+                    break
+
+        # All commands completed successfully
+        await self.connection.send("task_complete", {
+            "task_id": task_id,
+            "success": True,
+            "exit_code": 0,
+        })
+        logger.info("Task %s completed successfully", task_id)
 
     async def _on_scheduled_task(self, scheduled: ScheduledTask) -> None:
         """Handle scheduled task execution."""
