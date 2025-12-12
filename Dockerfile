@@ -1,30 +1,12 @@
-FROM python:3.11-slim
+FROM node:20-alpine
 
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+COPY package*.json ./
+RUN npm ci --only=production
 
-# Copy requirements first for caching
-COPY pyproject.toml .
-COPY README.md .
+COPY . .
 
-# Install Python dependencies (without RPi-specific packages for non-Pi deployment)
-RUN pip install --no-cache-dir .
+EXPOSE 8080
 
-# Copy application code
-COPY *.py ./
-COPY *.sql ./
-COPY *.sh ./
-
-# Expose port
-EXPOSE 5000
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:5000/health || exit 1
-
-# Run the app
-CMD ["python", "app.py"]
+CMD ["npm", "start"]
