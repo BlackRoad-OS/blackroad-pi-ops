@@ -36,6 +36,10 @@ This Software is designed to support:
 - 30,000 Human Employees
 - Enterprise-scale operations under BlackRoad OS, Inc.
 
+CORE PRODUCT:
+API layer above Google, OpenAI, and Anthropic that manages AI model
+memory and continuity, enabling entire companies to operate exclusively by AI.
+
 OWNERSHIP:
 All intellectual property rights remain the exclusive property of
 BlackRoad OS, Inc.
