@@ -303,7 +303,7 @@ def create_app() -> FastAPI:
         password=mqtt_password,
     )
 
-    app = FastAPI(title="Pi-Ops Dashboard", version="0.1.0")
+    app = FastAPI(title="Pi-Ops Dashboard", version="1.0.0")
 
     @app.on_event("startup")
     async def startup() -> None:  # pragma: no cover - FastAPI managed
@@ -328,6 +328,10 @@ def create_app() -> FastAPI:
         return events
 
     # ------------------------------------------------------------------
+    @app.get("/health")
+    async def health() -> Dict[str, Any]:
+        return {"status": "ok", "service": "pi-ops"}
+
     @app.get("/", response_class=HTMLResponse)
     async def index() -> str:
         return DASHBOARD_HTML
@@ -869,3 +873,16 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 
 
 app = create_app()
+
+
+def main() -> None:  # pragma: no cover
+    """CLI entry point: starts the uvicorn server."""
+    import uvicorn
+
+    host = _env("PI_OPS_HOST", "0.0.0.0")
+    port = _env_int("PI_OPS_PORT", 8080)
+    uvicorn.run("app:app", host=host, port=port)
+
+
+if __name__ == "__main__":  # pragma: no cover
+    main()

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "blackroad-pi-ops"
-version = "0.1.0"
+version = "1.0.0"
 description = "Edge device management for Raspberry Pi and Jetson - LED control, screen rendering, and hardware interfaces"
 readme = "README.md"
 license = "MIT"
@@ -22,7 +22,7 @@ keywords = [
     "embedded"
 ]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Environment :: Console",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
@@ -35,7 +35,9 @@ classifiers = [
     "Topic :: Home Automation",
 ]
 dependencies = [
-    "flask>=2.3.0",
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.27.1",
+    "paho-mqtt>=1.6.1",
     "pyyaml>=6.0",
     "pillow>=9.0.0",
 ]
@@ -46,9 +48,15 @@ rpi = [
     "rpi_ws281x>=4.3.0",
     "spidev>=3.6",
 ]
+agent = [
+    "websockets>=11.0",
+    "psutil>=5.9.0",
+]
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
+    "pytest-asyncio>=0.21.0",
+    "httpx>=0.24.0",
     "black>=23.0.0",
     "ruff>=0.1.0",
 ]
@@ -56,6 +64,7 @@ dev = [
 [project.scripts]
 pi-ops = "app:main"
 led-bridge = "led_bridge:main"
+pi-agent = "pi_agent.main:main"
 
 [project.urls]
 Homepage = "https://blackroad.io"
@@ -70,3 +79,7 @@ target-version = ["py39", "py310", "py311"]
 [tool.ruff]
 line-length = 100
 select = ["E", "F", "I", "N", "W"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
