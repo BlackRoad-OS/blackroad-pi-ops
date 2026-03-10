@@ -8,13 +8,17 @@ pip install blackroad-pi-ops
 
 ## What is this?
 
-Pi Ops provides the edge computing layer for BlackRoad's agent infrastructure:
+Pi Ops provides the edge computing layer for BlackRoad's agent infrastructure.
+All three services communicate through an MQTT broker — publish a message on the
+right topic and the LED strip lights up, the screen updates, and the dashboard
+logs it instantly.
 
 | Component | Description |
 |-----------|-------------|
-| **app.py** | Main Flask API for device management (871 lines) |
-| **led_bridge.py** | WS281x LED strip control and animations (462 lines) |
-| **screen_renderer.py** | Display output for attached screens (465 lines) |
+| **app.py** | FastAPI MQTT monitoring dashboard — REST API + live SSE stream |
+| **led_bridge.py** | MQTT-to-LED translator — converts messages into WS281x animations |
+| **screen_renderer.py** | MQTT-driven pygame display renderer — 4 visual modes |
+| **pi_agent/** | Remote task executor — receives shell/Python tasks via WebSocket |
 
 ## Quick Start
 
@@ -24,7 +28,7 @@ Pi Ops provides the edge computing layer for BlackRoad's agent infrastructure:
 # Install with Pi-specific dependencies
 pip install blackroad-pi-ops[rpi]
 
-# Run the service
+# Run the MQTT dashboard (requires an MQTT broker on localhost:1883)
 pi-ops
 
 # Or as a systemd service
@@ -35,43 +39,59 @@ sudo systemctl start pi-ops
 
 ### LED Bridge
 
+The LED bridge subscribes to MQTT topics and drives a connected WS281x LED strip.
+
 ```bash
-# Run standalone LED controller
-led-bridge
+# Run against a local MQTT broker
+led-bridge --mqtt-broker localhost --pixels 60
 
-# Control via API
-curl -X POST http://localhost:5000/led/color \
-  -H "Content-Type: application/json" \
-  -d '{"r": 255, "g": 0, "b": 128}'
-
-curl -X POST http://localhost:5000/led/pattern \
-  -H "Content-Type: application/json" \
-  -d '{"pattern": "rainbow", "speed": 50}'
+# Smoke-test all patterns without a broker
+led-bridge --test
 ```
+
+**MQTT topics consumed by led-bridge:**
+
+| Topic | Effect |
+|-------|--------|
+| `system/heartbeat/#` | Green pulse |
+| `system/hologram/text` | Rainbow scroll |
+| `system/panel/status` | Status color (`{"status": "ok|warning|error"}`) |
+| `agent/output` | Blue flash |
+| `lights/pattern` | Custom JSON pattern (`{"type": "rainbow", "duration": 2.0}`) |
 
 ### Screen Renderer
 
-```python
-from screen_renderer import ScreenRenderer
+The screen renderer subscribes to MQTT topics and renders them on a pygame display.
 
-renderer = ScreenRenderer(width=320, height=240)
-renderer.draw_text("Agent Status: Online", x=10, y=10)
-renderer.draw_chart(metrics)
-renderer.update()
+```bash
+# Run against a local MQTT broker
+python screen_renderer.py --mqtt-broker localhost --width 800 --height 480
+
+# Smoke-test without a broker
+python screen_renderer.py --test
 ```
 
-## API Endpoints
+**MQTT topics consumed by screen-renderer:**
+
+| Topic | Display mode |
+|-------|--------------|
+| `system/hologram/text` | Hologram — pulsing cyan text with scanline effect |
+| `system/panel/status` | Status — color-coded bar (`{"status": "ok", "message": "…"}`) |
+| `agent/output` | Scroll — appends to a rolling list (last 10 kept) |
+| `screen/command` | Control — `{"command": "clear"}` or `{"command": "mode", "mode": "dashboard"}` |
+
+## Dashboard API Endpoints
+
+`pi-ops` starts a FastAPI server (default port 8000).
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/health` | GET | Health check |
-| `/status` | GET | Device status and metrics |
-| `/led/color` | POST | Set LED strip color |
-| `/led/pattern` | POST | Run LED animation pattern |
-| `/led/off` | POST | Turn off LEDs |
-| `/screen/text` | POST | Display text on screen |
-| `/screen/image` | POST | Display image on screen |
-| `/screen/clear` | POST | Clear screen |
+| `/` | GET | Embedded HTML dashboard with live updates |
+| `/api/messages` | GET | Recent MQTT messages (`?limit=100`) |
+| `/api/stats` | GET | Per-topic message counts and last-seen times |
+| `/api/publish` | POST | Publish an MQTT message (`{"topic": "…", "payload": "…"}`) |
+| `/events` | GET | Server-Sent Events stream for real-time message push |
 
 ## Hardware Support
 
@@ -106,21 +126,20 @@ Pi GPIO24          --> Display RST
 
 ## Configuration
 
-Environment variables:
+Environment variables (see `.env.example`):
 
 ```bash
+# MQTT broker
+MQTT_BROKER=localhost
+MQTT_PORT=1883
+
 # LED settings
 LED_COUNT=60
 LED_PIN=18
 LED_BRIGHTNESS=128
 
-# Display settings
-DISPLAY_TYPE=ili9341
-DISPLAY_WIDTH=320
-DISPLAY_HEIGHT=240
-
-# API settings
-FLASK_PORT=5000
+# Pi-Ops server
+PI_OPS_PORT=8000
 ```
 
 ## Systemd Service
@@ -136,7 +155,7 @@ After=network.target
 Type=simple
 User=pi
 WorkingDirectory=/opt/blackroad-pi-ops
-ExecStart=/usr/bin/python3 app.py
+ExecStart=/usr/local/bin/pi-ops
 Restart=always
 
 [Install]

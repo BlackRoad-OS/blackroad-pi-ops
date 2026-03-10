@@ -80,6 +80,14 @@ target-version = ["py39", "py310", "py311"]
 line-length = 100
 select = ["E", "F", "I", "N", "W"]
 
+[tool.hatch.build.targets.wheel]
+include = [
+    "app.py",
+    "led_bridge.py",
+    "screen_renderer.py",
+    "pi_agent/**",
+]
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
