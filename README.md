@@ -1,181 +1,48 @@
-# BlackRoad Pi Ops
+<!-- BlackRoad SEO Enhanced -->
 
-**Edge device management for Raspberry Pi and Jetson - LED control, screen rendering, and hardware interfaces.**
+# ulackroad pi ops
 
-```bash
-pip install blackroad-pi-ops
-```
+> Part of **[BlackRoad OS](https://blackroad.io)** — Sovereign Computing for Everyone
 
-## What is this?
+[![BlackRoad OS](https://img.shields.io/badge/BlackRoad-OS-ff1d6c?style=for-the-badge)](https://blackroad.io)
+[![BlackRoad OS](https://img.shields.io/badge/Org-BlackRoad-OS-2979ff?style=for-the-badge)](https://github.com/BlackRoad-OS)
+[![License](https://img.shields.io/badge/License-Proprietary-f5a623?style=for-the-badge)](LICENSE)
 
-Pi Ops provides the edge computing layer for BlackRoad's agent infrastructure:
+**ulackroad pi ops** is part of the **BlackRoad OS** ecosystem — a sovereign, distributed operating system built on edge computing, local AI, and mesh networking by **BlackRoad OS, Inc.**
 
-| Component | Description |
-|-----------|-------------|
-| **app.py** | Main Flask API for device management (871 lines) |
-| **led_bridge.py** | WS281x LED strip control and animations (462 lines) |
-| **screen_renderer.py** | Display output for attached screens (465 lines) |
+## About BlackRoad OS
 
-## Quick Start
+BlackRoad OS is a sovereign computing platform that runs AI locally on your own hardware. No cloud dependencies. No API keys. No surveillance. Built by [BlackRoad OS, Inc.](https://github.com/BlackRoad-OS-Inc), a Delaware C-Corp founded in 2025.
 
-### On Raspberry Pi
+### Key Features
+- **Local AI** — Run LLMs on Raspberry Pi, Hailo-8, and commodity hardware
+- **Mesh Networking** — WireGuard VPN, NATS pub/sub, peer-to-peer communication
+- **Edge Computing** — 52 TOPS of AI acceleration across a Pi fleet
+- **Self-Hosted Everything** — Git, DNS, storage, CI/CD, chat — all sovereign
+- **Zero Cloud Dependencies** — Your data stays on your hardware
 
-```bash
-# Install with Pi-specific dependencies
-pip install blackroad-pi-ops[rpi]
+### The BlackRoad Ecosystem
+| Organization | Focus |
+|---|---|
+| [BlackRoad OS](https://github.com/BlackRoad-OS) | Core platform and applications |
+| [BlackRoad OS, Inc.](https://github.com/BlackRoad-OS-Inc) | Corporate and enterprise |
+| [BlackRoad AI](https://github.com/BlackRoad-AI) | Artificial intelligence and ML |
+| [BlackRoad Hardware](https://github.com/BlackRoad-Hardware) | Edge hardware and IoT |
+| [BlackRoad Security](https://github.com/BlackRoad-Security) | Cybersecurity and auditing |
+| [BlackRoad Quantum](https://github.com/BlackRoad-Quantum) | Quantum computing research |
+| [BlackRoad Agents](https://github.com/BlackRoad-Agents) | Autonomous AI agents |
+| [BlackRoad Network](https://github.com/BlackRoad-Network) | Mesh and distributed networking |
+| [BlackRoad Education](https://github.com/BlackRoad-Education) | Learning and tutoring platforms |
+| [BlackRoad Labs](https://github.com/BlackRoad-Labs) | Research and experiments |
+| [BlackRoad Cloud](https://github.com/BlackRoad-Cloud) | Self-hosted cloud infrastructure |
+| [BlackRoad Forge](https://github.com/BlackRoad-Forge) | Developer tools and utilities |
 
-# Run the service
-pi-ops
-
-# Or as a systemd service
-sudo cp pi-ops.service /etc/systemd/system/
-sudo systemctl enable pi-ops
-sudo systemctl start pi-ops
-```
-
-### LED Bridge
-
-```bash
-# Run standalone LED controller
-led-bridge
-
-# Control via API
-curl -X POST http://localhost:5000/led/color \
-  -H "Content-Type: application/json" \
-  -d '{"r": 255, "g": 0, "b": 128}'
-
-curl -X POST http://localhost:5000/led/pattern \
-  -H "Content-Type: application/json" \
-  -d '{"pattern": "rainbow", "speed": 50}'
-```
-
-### Screen Renderer
-
-```python
-from screen_renderer import ScreenRenderer
-
-renderer = ScreenRenderer(width=320, height=240)
-renderer.draw_text("Agent Status: Online", x=10, y=10)
-renderer.draw_chart(metrics)
-renderer.update()
-```
-
-## API Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/health` | GET | Health check |
-| `/status` | GET | Device status and metrics |
-| `/led/color` | POST | Set LED strip color |
-| `/led/pattern` | POST | Run LED animation pattern |
-| `/led/off` | POST | Turn off LEDs |
-| `/screen/text` | POST | Display text on screen |
-| `/screen/image` | POST | Display image on screen |
-| `/screen/clear` | POST | Clear screen |
-
-## Hardware Support
-
-### Raspberry Pi
-- Pi 4, Pi 3, Pi Zero 2 W
-- WS281x LED strips (via GPIO18)
-- SPI displays (ILI9341, ST7789, etc.)
-- I2C OLED displays
-
-### Jetson
-- Jetson Nano, Xavier NX
-- PWM LED control
-- HDMI/DisplayPort output
-
-## Wiring
-
-### LED Strip (WS281x)
-```
-Pi GPIO18 (Pin 12) --> LED DIN
-Pi 5V (Pin 2)      --> LED VCC
-Pi GND (Pin 6)     --> LED GND
-```
-
-### SPI Display
-```
-Pi GPIO10 (MOSI)   --> Display SDA
-Pi GPIO11 (SCLK)   --> Display SCL
-Pi GPIO8 (CE0)     --> Display CS
-Pi GPIO25          --> Display DC
-Pi GPIO24          --> Display RST
-```
-
-## Configuration
-
-Environment variables:
-
-```bash
-# LED settings
-LED_COUNT=60
-LED_PIN=18
-LED_BRIGHTNESS=128
-
-# Display settings
-DISPLAY_TYPE=ili9341
-DISPLAY_WIDTH=320
-DISPLAY_HEIGHT=240
-
-# API settings
-FLASK_PORT=5000
-```
-
-## Systemd Service
-
-The included `pi-ops.service` file:
-
-```ini
-[Unit]
-Description=BlackRoad Pi Ops
-After=network.target
-
-[Service]
-Type=simple
-User=pi
-WorkingDirectory=/opt/blackroad-pi-ops
-ExecStart=/usr/bin/python3 app.py
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-```
-
-## License
-
-MIT - See [LICENSE](LICENSE) for details.
+### Links
+- **Website**: [blackroad.io](https://blackroad.io)
+- **Documentation**: [docs.blackroad.io](https://docs.blackroad.io)
+- **Chat**: [chat.blackroad.io](https://chat.blackroad.io)
+- **Search**: [search.blackroad.io](https://search.blackroad.io)
 
 ---
 
-Built by [BlackRoad OS](https://blackroad.io)
 
----
-
-## 📜 License & Copyright
-
-**Copyright © 2026 BlackRoad OS, Inc. All Rights Reserved.**
-
-**CEO:** Alexa Amundson
-
-**PROPRIETARY AND CONFIDENTIAL**
-
-This software is the proprietary property of BlackRoad OS, Inc. and is **NOT for commercial resale**.
-
-### ⚠️ Usage Restrictions:
-- ✅ **Permitted:** Testing, evaluation, and educational purposes
-- ❌ **Prohibited:** Commercial use, resale, or redistribution without written permission
-
-### 🏢 Enterprise Scale:
-Designed to support:
-- 30,000 AI Agents
-- 30,000 Human Employees
-- One Operator: Alexa Amundson (CEO)
-
-### 📧 Contact:
-For commercial licensing inquiries:
-- **Email:** blackroad.systems@gmail.com
-- **Organization:** BlackRoad OS, Inc.
-
-See [LICENSE](LICENSE) for complete terms.
