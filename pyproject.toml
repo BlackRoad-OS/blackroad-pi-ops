@@ -44,7 +44,7 @@ dependencies = [
 rpi = [
     "RPi.GPIO>=0.7.0",
     "rpi_ws281x>=4.3.0",
-    "spidev>=3.6",
+    "spidev>=3.8",
 ]
 dev = [
     "pytest>=7.0.0",
