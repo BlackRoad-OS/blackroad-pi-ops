@@ -43,7 +43,7 @@ dependencies = [
 [project.optional-dependencies]
 rpi = [
     "RPi.GPIO>=0.7.0",
-    "rpi_ws281x>=4.3.0",
+    "rpi_ws281x>=5.0.0",
     "spidev>=3.6",
 ]
 dev = [
